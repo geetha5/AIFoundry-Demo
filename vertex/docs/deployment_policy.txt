@@ -1,0 +1,17 @@
+Deployment Policy
+
+All AI model deployments must pass through three environments in order:
+staging, then production. There is no direct deploy to production.
+
+Every deployment is gated by an automated evaluation step that checks
+response quality, groundedness, and basic safety signals against a fixed
+test set. A deployment that fails evaluation is blocked automatically and
+the pipeline reports which checks failed.
+
+Promotion from staging to production requires a manual approval step by a
+designated approver. This creates an audit trail: every production change
+is tied to a specific commit, a specific evaluation run, and a specific
+approver.
+
+Rollback is done by redeploying the previous known-good model version, which
+is tracked by deployment tag in the pipeline history.

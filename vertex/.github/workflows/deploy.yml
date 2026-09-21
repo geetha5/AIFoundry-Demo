@@ -1,0 +1,111 @@
+name: Build, Evaluate, and Deploy
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  IMAGE_NAME: vertex-rag-demo
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r app/requirements.txt
+
+      - name: Lint
+        run: |
+          pip install ruff
+          ruff check app/ eval/
+
+      - name: Build container image
+        run: docker build -t $IMAGE_NAME:${{ github.sha }} .
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Push image to registry
+        run: |
+          az acr build --registry ${{ secrets.AZURE_CONTAINER_REGISTRY }} \
+            --image $IMAGE_NAME:${{ github.sha }} .
+
+      - name: Deploy to staging
+        env:
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          AZURE_FOUNDRY_RESOURCE_NAME: ${{ secrets.AZURE_FOUNDRY_RESOURCE_NAME }}
+          AZURE_CONTAINER_APP_NAME_STAGING: ${{ secrets.AZURE_CONTAINER_APP_NAME_STAGING }}
+          AZURE_CONTAINER_APP_NAME_PROD: ${{ secrets.AZURE_CONTAINER_APP_NAME_PROD }}
+          AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+        run: |
+          chmod +x infra/deploy.sh
+          ./infra/deploy.sh staging ${{ github.sha }}
+
+  evaluate-staging:
+    name: Evaluation Gate
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install eval dependencies
+        run: pip install requests
+
+      - name: Run evaluation gate against staging
+        run: |
+          python eval/eval.py --base-url ${{ secrets.STAGING_BASE_URL }}
+
+  deploy-prod:
+    name: Promote to Production
+    needs: evaluate-staging
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production  # requires manual approval in repo settings
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to production
+        env:
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          AZURE_FOUNDRY_RESOURCE_NAME: ${{ secrets.AZURE_FOUNDRY_RESOURCE_NAME }}
+          AZURE_CONTAINER_APP_NAME_STAGING: ${{ secrets.AZURE_CONTAINER_APP_NAME_STAGING }}
+          AZURE_CONTAINER_APP_NAME_PROD: ${{ secrets.AZURE_CONTAINER_APP_NAME_PROD }}
+          AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+        run: |
+          chmod +x infra/deploy.sh
+          ./infra/deploy.sh prod ${{ github.sha }}
+
+      - name: Smoke test production
+        run: |
+          curl -f ${{ secrets.PROD_BASE_URL }}/health

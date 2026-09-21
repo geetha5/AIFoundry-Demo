@@ -1,0 +1,14 @@
+Engineering Onboarding Guide
+
+Welcome to the platform team. Your first week priorities are:
+1. Get access to the internal developer portal and request VPN credentials.
+2. Set up your local dev environment using the bootstrap script in tools/setup.sh.
+3. Read the incident response runbook before your on-call rotation.
+4. Join the #platform-eng and #ai-gateway Slack channels.
+
+All production deployments go through the CI/CD pipeline. Direct pushes to
+production environments are disabled; every change must pass automated
+evaluation and receive manual approval before promotion.
+
+On-call engineers are expected to acknowledge pages within 10 minutes and
+follow the escalation policy documented in the runbook.

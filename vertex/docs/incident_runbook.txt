@@ -1,0 +1,18 @@
+Incident Response Runbook
+
+Severity levels:
+- SEV1: Full outage of a production AI endpoint. Page immediately.
+- SEV2: Degraded performance or partial outage. Notify the on-call channel.
+- SEV3: Minor issue with no user impact. File a ticket, no page needed.
+
+First response steps for any SEV1 or SEV2:
+1. Acknowledge the page within 10 minutes.
+2. Check the observability dashboard for latency, error rate, and token usage
+   anomalies on the affected endpoint.
+3. If a recent deployment correlates with the incident, roll back to the
+   previous known-good version immediately.
+4. Post a status update in the incident channel every 15 minutes until
+   resolved.
+
+After resolution, a post-mortem is required for all SEV1 incidents within
+48 hours, including root cause and follow-up action items.
