@@ -25,7 +25,7 @@ from openai import AzureOpenAI
 INDEX_PATH = Path(__file__).parent / "index.json"
 TOP_K = 3
 
-app = FastAPI(title="vertex-rag-demo")
+app = FastAPI(title="AIFoundry RAG Demo")
 
 
 def get_client() -> AzureOpenAI:

@@ -1,4 +1,4 @@
-# vertex-rag-demo
+# AIFoundry RAG Demo
 
 A tiny RAG service deployed on **Azure AI Foundry**, shipped through a
 **gated CI/CD pipeline**: every change is built, evaluated against a fixed

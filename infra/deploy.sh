@@ -54,7 +54,7 @@ echo "== Deploying app image to $ENVIRONMENT ($APP_NAME) =="
 az containerapp update \
   --name "$APP_NAME" \
   --resource-group "$AZURE_RESOURCE_GROUP" \
-  --image "$AZURE_CONTAINER_REGISTRY/vertex-rag-demo:$IMAGE_TAG"
+  --image "$AZURE_CONTAINER_REGISTRY/rag-demo:$IMAGE_TAG"
 
 echo "== Fetching endpoint URL =="
 az containerapp show \

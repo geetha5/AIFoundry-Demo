@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  IMAGE_NAME: vertex-rag-demo
+  IMAGE_NAME: rag-demo
 
 jobs:
   build:
